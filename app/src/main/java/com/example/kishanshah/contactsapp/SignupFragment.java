@@ -24,6 +24,11 @@ import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+
+/*
+* A simple fragment for user signup
+* */
+
 public class SignupFragment extends Fragment {
     // TODO: Rename parameter arguments, choose names that match
 
@@ -82,7 +87,7 @@ public class SignupFragment extends Fragment {
                                             if(task.isSuccessful()){
                                                 mListener.onUserCreated(currentUser);
                                             } else {
-                                                Snackbar.make(view,"Error Creating User!",Snackbar.LENGTH_LONG).show();
+                                                Snackbar.make(view,"Error Creating ser!",Snackbar.LENGTH_LONG).show();
                                             }
                                         }
                                     });

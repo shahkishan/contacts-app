@@ -21,7 +21,7 @@ import java.util.List;
 import static android.Manifest.permission.READ_CONTACTS;
 
 /**
- * A login screen that offers login via email/password.
+ * Activity to login or signup
  */
 public class LoginActivity extends AppCompatActivity implements SignupFragment.OnUserCreatedListener, LoginFragment.OnUserLoggedInListner{
 
@@ -29,6 +29,7 @@ public class LoginActivity extends AppCompatActivity implements SignupFragment.O
     private PagerAdapter adapter;
     private FragmentManager fragmentManager;
     private TabLayout tabLayout;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,11 +41,15 @@ public class LoginActivity extends AppCompatActivity implements SignupFragment.O
         setContentView(R.layout.activity_login);
 
         fragmentManager=getSupportFragmentManager();
+        //Initialize resources
         viewPager=findViewById(R.id.pager);
         tabLayout=findViewById(R.id.tabs);
+
         adapter=new PagerAdapter(fragmentManager);
+        //Load Tabs
         adapter.addFragment(new LoginFragment(),"Login");
         adapter.addFragment(new SignupFragment(),"Signup");
+
         viewPager.setAdapter(adapter);
         tabLayout.setupWithViewPager(viewPager);
     }
@@ -59,6 +64,8 @@ public class LoginActivity extends AppCompatActivity implements SignupFragment.O
        startMainActivity();
     }
 
+
+    //Adapter class for loading tabs
     public class PagerAdapter extends FragmentStatePagerAdapter{
         private List<Fragment> mFragmentList=new ArrayList<>();
         private List<String> mFragmentTitleList=new ArrayList<>();

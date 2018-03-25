@@ -30,15 +30,16 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import static android.app.Activity.RESULT_OK;
+
 /**
  * A simple {@link Fragment} subclass.
  */
-public class AddContactFragment extends Fragment implements View.OnClickListener, OnMapReadyCallback{
+public class AddContactFragment extends Fragment implements View.OnClickListener, OnMapReadyCallback {
 
     private EditText etName, etNumber;
     private Button btnSave;
 
-
+    //Map Utils
     private GoogleApiClient mGoogleApiClient;
     private int PLACE_PICKER_REQUEST = 1;
     private Button btnLocation;
@@ -47,6 +48,7 @@ public class AddContactFragment extends Fragment implements View.OnClickListener
     private double longtitude = INVALID_LAT_LONG;
     private GoogleMap gmap;
     private SupportMapFragment mapFragment;
+
     private Contact contact;
 
     public AddContactFragment() {
@@ -58,32 +60,39 @@ public class AddContactFragment extends Fragment implements View.OnClickListener
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        final View view=inflater.inflate(R.layout.fragment_add_contact, container, false);
-        btnSave=view.findViewById(R.id.btnSave);
-        etName=view.findViewById(R.id.etName);
-        etNumber=view.findViewById(R.id.etNumber);
-        btnLocation=view.findViewById(R.id.btnLocation);
+        final View view = inflater.inflate(R.layout.fragment_add_contact, container, false);
 
+        //Initializing components
+        btnSave = view.findViewById(R.id.btnSave);
+        etName = view.findViewById(R.id.etName);
+        etNumber = view.findViewById(R.id.etNumber);
+        btnLocation = view.findViewById(R.id.btnLocation);
+
+        //Setting Listners
         btnSave.setOnClickListener(this);
         btnLocation.setOnClickListener(this);
 
+        //Initializing GoogleApiClient
         mGoogleApiClient = new GoogleApiClient
                 .Builder(getActivity())
                 .addApi(Places.GEO_DATA_API)
                 .addApi(Places.PLACE_DETECTION_API)
                 .build();
 
+
+        //Initialize mapFragment
         mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.g_map);
 
+        //Load Map asynchronously
         mapFragment.getMapAsync(this);
 
-
-        if(getArguments()!=null) {
+        //Check if we are editing existing contact or adding new contact
+        if (getArguments() != null) {
             contact = getArguments().getParcelable("contact");
-                etName.setText(contact.getName());
-                etNumber.setText(contact.getContactno());
-                latitude = contact.getLatitude();
-                longtitude = contact.getLongitude();
+            etName.setText(contact.getName());
+            etNumber.setText(contact.getContactno());
+            latitude = contact.getLatitude();
+            longtitude = contact.getLongitude();
         }
 
         return view;
@@ -91,46 +100,53 @@ public class AddContactFragment extends Fragment implements View.OnClickListener
 
     @Override
     public void onClick(View v) {
-        if(v.getId()==btnSave.getId()){
-            String nm=etName.getText().toString();
-            String contact=etNumber.getText().toString();
-            String uid= FirebaseAuth.getInstance().getCurrentUser().getUid();
+        //If user clicks on save button
+        if (v.getId() == btnSave.getId()) {
+            //Get text from textboxes
+            String nm = etName.getText().toString();
+            String contact = etNumber.getText().toString();
 
-            if(nm.equals("")||nm==null||contact==null||contact.equals("")||longtitude==INVALID_LAT_LONG||latitude==INVALID_LAT_LONG){
-                Snackbar.make(getView(),"PLEASE ENTER ALL DETAILS!",Snackbar.LENGTH_LONG).show();
+            //Get user id
+            String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+            //Check for values in textboxes
+            if (nm.equals("") || nm == null || contact == null || contact.equals("") || longtitude == INVALID_LAT_LONG || latitude == INVALID_LAT_LONG) {
+                Snackbar.make(getView(), "PLEASE ENTER ALL DETAILS!", Snackbar.LENGTH_LONG).show();
                 return;
             }
 
-            Contact c=new Contact(contact,nm,latitude,longtitude);
-            try{
-            if(c.getContactno()!=this.contact.getContactno() ){
-                DatabaseReference ref=FirebaseDatabase.getInstance().getReference("users").child(uid).child("contacts").child(this.contact.getContactno());
-                Task task=ref.removeValue();
-                if(task.isSuccessful()){
-                    Log.d("removed", "success");
-                } else {
-                    Log.d("removed", "failure");
+            Contact c = new Contact(contact, nm, latitude, longtitude);
+            try {
+                //If user changed contact number while editing, remove the old contact
+                if (c.getContactno() != this.contact.getContactno()) {
+                    DatabaseReference ref = FirebaseDatabase.getInstance().getReference("users").child(uid).child("contacts").child(this.contact.getContactno());
+                    Task task = ref.removeValue();
+                    if (task.isSuccessful()) {
+                        Log.d("removed", "success");
+                    } else {
+                        Log.d("removed", "failure");
+                    }
                 }
-            }
-            } catch (NullPointerException e){
+            } catch (NullPointerException e) {
 
             } finally {
+                //Save the new Contact
                 c.addOrUpdateContact();
                 etName.setText("");
                 etNumber.setText("");
-                latitude=INVALID_LAT_LONG;
-                longtitude=INVALID_LAT_LONG;
+                etName.requestFocus();
+                latitude = INVALID_LAT_LONG;
+                longtitude = INVALID_LAT_LONG;
                 mapFragment.getMapAsync(this);
-                if(getArguments()!=null){
-                    Snackbar.make(getView(),"Changes saved!",Snackbar.LENGTH_LONG).show();
+                if (getArguments() != null) {
+                    Snackbar.make(getView(), "Changes saved!", Snackbar.LENGTH_LONG).show();
                 } else {
-                    Snackbar.make(getView(),"Contact saved!",Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(getView(), "Contact saved!", Snackbar.LENGTH_LONG).show();
                 }
             }
 
 
-
-        } else if(v.getId()==btnLocation.getId()){
+        } else if (v.getId() == btnLocation.getId()) { //If user clicks on get location button
             PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
             try {
                 startActivityForResult(builder.build(getActivity()), PLACE_PICKER_REQUEST);
@@ -140,6 +156,7 @@ public class AddContactFragment extends Fragment implements View.OnClickListener
         }
     }
 
+    //Select Location from map
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == PLACE_PICKER_REQUEST) {
@@ -152,6 +169,8 @@ public class AddContactFragment extends Fragment implements View.OnClickListener
         }
     }
 
+
+    //Load data into map
     @Override
     public void onMapReady(GoogleMap googleMap) {
         gmap = googleMap;

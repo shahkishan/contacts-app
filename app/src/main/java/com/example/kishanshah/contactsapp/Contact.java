@@ -17,6 +17,7 @@ import java.util.Random;
 
 /**
  * Created by kishanshah on 22/3/18.
+ * Details of contact
  */
 
 public class Contact implements Serializable, Comparable<Contact>,Parcelable{

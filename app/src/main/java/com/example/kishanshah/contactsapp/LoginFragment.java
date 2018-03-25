@@ -20,7 +20,7 @@ import com.google.firebase.auth.FirebaseUser;
 
 
 /**
- * A simple {@link Fragment} subclass.
+ * A simple Login Fragment.
  */
 public class LoginFragment extends Fragment {
 

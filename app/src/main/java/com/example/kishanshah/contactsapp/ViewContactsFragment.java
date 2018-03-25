@@ -1,7 +1,9 @@
 package com.example.kishanshah.contactsapp;
 
 
-
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.DialogInterface;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.DialogFragment;
 import android.graphics.Color;
@@ -53,7 +55,7 @@ import java.util.Iterator;
 
 
 /**
- * A simple {@link Fragment} subclass.
+ * A simple Fragment to view contacts
  */
 public class ViewContactsFragment extends Fragment {
 
@@ -62,6 +64,7 @@ public class ViewContactsFragment extends Fragment {
     private DatabaseReference ref;
     private ValueEventListener myListner;
     private OnContactActionLister mListner;
+
     public ViewContactsFragment() {
         // Required empty public constructor
     }
@@ -71,84 +74,107 @@ public class ViewContactsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        final View view= inflater.inflate(R.layout.fragment_view_contacts, container, false);
-        mlv=view.findViewById(R.id.materialListView);
+        final View view = inflater.inflate(R.layout.fragment_view_contacts, container, false);
+        mlv = view.findViewById(R.id.materialListView);
 
-        mListner=(MainActivity)getActivity();
-        myListner=new ValueEventListener() {
+
+        mListner = (MainActivity) getActivity();
+
+        //Listner to load contacts from firebase database
+        myListner = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                contacts=new ArrayList<>();
+                contacts = new ArrayList<>();
                 mlv.getAdapter().clearAll();
-                for(DataSnapshot ds : dataSnapshot.getChildren()){
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
                     contacts.add(ds.getValue(Contact.class));
                 }
-                if(contacts.size()==0){
-                    Snackbar.make(view,"NO CONTACTS FOUND!",Snackbar.LENGTH_LONG).show();
+                if (contacts.size() == 0) {
+                    Snackbar.make(view, "NO CONTACTS FOUND!", Snackbar.LENGTH_LONG).show();
                 } else {
-                Collections.sort(contacts);
-                for(final Contact contact :contacts) {
+                    Collections.sort(contacts);
+                    for (final Contact contact : contacts) {
+                        //3rd party library to use cards
+                        Card card = new Card.Builder(getContext())
+                                .setTag("BASIC_IMAGE_CARDS_BUTTON")
+                                .withProvider(new CardProvider<>())
+                                .setTitle(contact.getName())
+                                .setTitleColor(Color.WHITE)
+                                .setDescription(contact.getContactno())
+                                .setLayout(R.layout.contacts_card_layout)
+                                .setDrawable(new ColorDrawable(contact.getColor()))
+                                .addAction(R.id.center_text_button, new Action(getActivity()) { //Edit Contact action
+                                    @Override
+                                    protected void onRender(@NonNull View view, @NonNull Card card) {
+                                        TextView tv = (TextView) view;
+                                        tv.setText("Edit");
+                                        view.setOnClickListener(new View.OnClickListener() {
+                                            @Override
+                                            public void onClick(View v) {
+                                                mListner.onContactEdit(contact);
+                                            }
+                                        });
+                                    }
+                                })
+                                .addAction(R.id.right_text_button, new Action(getActivity()) { //Delete contact action
+                                    @Override
+                                    protected void onRender(@NonNull final View view, @NonNull Card card) {
+                                        TextView tv = (TextView) view;
+                                        tv.setText("Delete");
+                                        view.setOnClickListener(new View.OnClickListener() {
+                                            @Override
+                                            public void onClick(View v) {
+                                                AlertDialog dialog = new AlertDialog.Builder(getActivity()).create();
+                                                dialog.setTitle("Confirm Delete!");
+                                                dialog.setMessage("You can not revert the changes. Press Yes to delete.");
 
-                    Card card = new Card.Builder(getContext())
-                            .setTag("BASIC_IMAGE_CARDS_BUTTON")
-                            .withProvider(new CardProvider<>())
-                            .setTitle(contact.getName())
-                            .setTitleColor(Color.WHITE)
-                            .setDescription(contact.getContactno())
-                            .setLayout(R.layout.contacts_card_layout)
-                            .setDrawable(new ColorDrawable(contact.getColor()))
-                            .addAction(R.id.center_text_button, new Action(getActivity()) {
-                                @Override
-                                protected void onRender(@NonNull View view, @NonNull Card card) {
-                                    TextView tv = (TextView) view;
-                                    tv.setText("Edit");
-                                    view.setOnClickListener(new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View v) {
-                                            mListner.onContactEdit(contact);
-                                        }
-                                    });
-                                }
-                            })
-                            .addAction(R.id.right_text_button, new Action(getActivity()) {
-                                @Override
-                                protected void onRender(@NonNull final View view, @NonNull Card card) {
-                                    TextView tv = (TextView) view;
-                                    tv.setText("Delete");
-                                    view.setOnClickListener(new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View v) {
-                                            DatabaseReference ref = FirebaseDatabase.getInstance().getReference("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("contacts").child(contact.getContactno());
-                                            ref.removeValue();
-                                            Snackbar.make(view, "Contact Deleted!", Snackbar.LENGTH_LONG).show();
-                                        }
-                                    });
-                                }
-                            })
-                            .addAction(R.id.left_text_button, new Action(getActivity()) {
-                                @Override
-                                protected void onRender(@NonNull View view, @NonNull Card card) {
-                                    TextView tv = (TextView) view;
-                                    tv.setText("View Map");
-                                    view.setOnClickListener(new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View v) {
-                                            DialogFragment dialogFragment = new MapDialog();
+                                                dialog.setButton(AlertDialog.BUTTON_POSITIVE, "Yes", new DialogInterface.OnClickListener() {
 
-                                            Bundle bundle = new Bundle();
-                                            Log.d("onCreateView: ", contact.getLatitude() + " " + contact.getLongitude());
-                                            bundle.putParcelable("contact",contact);
-                                            dialogFragment.setArguments(bundle);
-                                            dialogFragment.setCancelable(true);
-                                            dialogFragment.show(getChildFragmentManager(), "MapFragment");
-                                        }
-                                    });
-                                }
-                            })
-                            .endConfig()
-                            .build();
-                    mlv.getAdapter().add(card);
-                }
+                                                    @Override
+                                                    public void onClick(DialogInterface dialog, int which) {
+                                                        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("contacts").child(contact.getContactno());
+                                                        ref.removeValue();
+                                                        Snackbar.make(view, "Contact Deleted!", Snackbar.LENGTH_LONG).show();
+                                                    }
+                                                });
+                                                dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "No", new DialogInterface.OnClickListener() {
+                                                    @Override
+                                                    public void onClick(DialogInterface dialog, int which) {
+
+                                                    }
+                                                });
+
+                                                dialog.show();
+
+
+                                            }
+                                        });
+                                    }
+                                })
+                                .addAction(R.id.left_text_button, new Action(getActivity()) { //View Location Action
+                                    @Override
+                                    protected void onRender(@NonNull View view, @NonNull Card card) {
+                                        TextView tv = (TextView) view;
+                                        tv.setText("View Map");
+                                        view.setOnClickListener(new View.OnClickListener() {
+                                            @Override
+                                            public void onClick(View v) {
+                                                DialogFragment dialogFragment = new MapDialog();
+
+                                                Bundle bundle = new Bundle();
+                                                Log.d("onCreateView: ", contact.getLatitude() + " " + contact.getLongitude());
+                                                bundle.putParcelable("contact", contact);
+                                                dialogFragment.setArguments(bundle);
+                                                dialogFragment.setCancelable(true);
+                                                dialogFragment.show(getChildFragmentManager(), "MapFragment");
+                                            }
+                                        });
+                                    }
+                                })
+                                .endConfig()
+                                .build();
+                        mlv.getAdapter().add(card);
+                    }
 
                 }
 
@@ -160,9 +186,11 @@ public class ViewContactsFragment extends Fragment {
 
             }
         };
-        contacts=new ArrayList<>();
-        FirebaseDatabase db=FirebaseDatabase.getInstance();
-        ref=db.getReference("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("contacts");
+        contacts = new ArrayList<>();
+
+        //Get Firebase Database Instance
+        FirebaseDatabase db = FirebaseDatabase.getInstance();
+        ref = db.getReference("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("contacts");
         ref.addValueEventListener(myListner);
 
         return view;
@@ -175,7 +203,7 @@ public class ViewContactsFragment extends Fragment {
     }
 
 
-    public interface OnContactActionLister{
+    public interface OnContactActionLister {
         public void onContactEdit(Contact contact);
     }
 
