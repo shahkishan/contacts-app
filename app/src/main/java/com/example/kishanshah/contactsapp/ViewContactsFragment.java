@@ -137,8 +137,7 @@ public class ViewContactsFragment extends Fragment {
 
                                             Bundle bundle = new Bundle();
                                             Log.d("onCreateView: ", contact.getLatitude() + " " + contact.getLongitude());
-                                            bundle.putDouble("lat", contact.getLatitude());
-                                            bundle.putDouble("long", contact.getLongitude());
+                                            bundle.putParcelable("contact",contact);
                                             dialogFragment.setArguments(bundle);
                                             dialogFragment.setCancelable(true);
                                             dialogFragment.show(getChildFragmentManager(), "MapFragment");

@@ -2,12 +2,9 @@ package com.example.kishanshah.contactsapp;
 
 
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.text.style.ReplacementSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,21 +18,14 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.location.places.ui.PlacePicker;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.MapView;
-import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -105,6 +95,12 @@ public class AddContactFragment extends Fragment implements View.OnClickListener
             String nm=etName.getText().toString();
             String contact=etNumber.getText().toString();
             String uid= FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+            if(nm.equals("")||nm==null||contact==null||contact.equals("")||longtitude==INVALID_LAT_LONG||latitude==INVALID_LAT_LONG){
+                Snackbar.make(getView(),"PLEASE ENTER ALL DETAILS!",Snackbar.LENGTH_LONG).show();
+                return;
+            }
+
             Contact c=new Contact(contact,nm,latitude,longtitude);
             try{
             if(c.getContactno()!=this.contact.getContactno() ){
@@ -160,7 +156,7 @@ public class AddContactFragment extends Fragment implements View.OnClickListener
     public void onMapReady(GoogleMap googleMap) {
         gmap = googleMap;
         LatLng location = new LatLng(latitude, longtitude);
-        gmap.addMarker(new MarkerOptions().position(location).title("Contact Location")).showInfoWindow();
+        gmap.addMarker(new MarkerOptions().position(location).title(etName.getText().toString())).showInfoWindow();
         gmap.moveCamera(CameraUpdateFactory.newLatLng(location));
         gmap.setBuildingsEnabled(true);
         gmap.setMinZoomPreference(8);
